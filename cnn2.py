@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+tf.logging.set_verbosity(tf.logging.INFO)
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
