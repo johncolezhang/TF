@@ -117,4 +117,3 @@ if __name__ == "__main__":
             train_step.run(feed_dict={x: batch_vec, y_: batch_label, keep_prob: 0.5})
 
         print('test accuracy %g' % accuracy.eval(feed_dict={x: test_vec, y_: test_label, keep_prob: 1.0}))
-
