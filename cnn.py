@@ -30,11 +30,13 @@ def conv_net(x_dict, n_classes, dropout, reuse, is_training):
         conv1 = tf.layers.conv2d(x, 32, 5, activation=tf.nn.relu)
         # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
         conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
+        tf.summary.histogram('first_c_layer', conv1)
 
         # Convolution Layer with 64 filters and a kernel size of 3
         conv2 = tf.layers.conv2d(conv1, 64, 3, activation=tf.nn.relu)
         # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
         conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
+        tf.summary.histogram('second_c_layer', conv2)
 
         # Flatten the data to a 1-D vector for the fully connected layer
         fc1 = tf.contrib.layers.flatten(conv2)
@@ -46,6 +48,7 @@ def conv_net(x_dict, n_classes, dropout, reuse, is_training):
 
         # Output layer, class prediction
         out = tf.layers.dense(fc1, n_classes)
+        tf.summary.histogram('output', out)
 
     return out
 
@@ -74,10 +77,19 @@ def model_fn(features, labels, mode):
 
     # Evaluate the accuracy of the model
     acc_op = tf.metrics.accuracy(labels=labels, predictions=pred_classes)
+    #tf.summary.scalar('accuracy_op', train_op)
+    tf.summary.scalar('loss_op', loss_op)
 
     # TF Estimators requires to return a EstimatorSpec, that specify
     # the different ops for training, evaluating, ...
+
+    summary_hook = tf.train.SummarySaverHook(
+        10,
+        output_dir='/tmp/cnn',
+        summary_op=tf.summary.merge_all())
+
     estim_specs = tf.estimator.EstimatorSpec(
+        training_hooks=[summary_hook],
         mode=mode,
         predictions=pred_probas,
         loss=loss_op,
@@ -96,20 +108,28 @@ if __name__ == "__main__":
     test_vec = vec[divide: 2 * divide, :]
     test_label = label[divide: 2 * divide]
 
-    # Build the Estimator
-    model = tf.estimator.Estimator(model_fn)
-    # Define the input function for training
-    input_fn = tf.estimator.inputs.numpy_input_fn(
-        x={'images': train_vec}, y=train_label,
-        batch_size=batch_size, num_epochs=None, shuffle=True)
-    # Train the Model
-    model.train(input_fn, steps=num_steps)
+    with tf.Session() as sess:
+        # Build the Estimator
+        model = tf.estimator.Estimator(model_fn=model_fn)
 
-    # Evaluate the Model
-    # Define the input function for evaluating
-    input_fn = tf.estimator.inputs.numpy_input_fn(
-        x={'images': test_vec}, y=test_label,
-        batch_size=batch_size, shuffle=False)
-    # Use the Estimator 'evaluate' method
-    e = model.evaluate(input_fn)
-    print("Testing Accuracy:", e['accuracy'])
+        # Define the input function for training
+        input_fn = tf.estimator.inputs.numpy_input_fn(
+            x={'images': train_vec},
+            y=train_label,
+            batch_size=batch_size,
+            num_epochs=None,
+            shuffle=True)
+
+        # Train the Model
+        model.train(input_fn, steps=num_steps)
+
+        # Evaluate the Model
+        # Define the input function for evaluating
+        input_fn = tf.estimator.inputs.numpy_input_fn(
+            x={'images': test_vec},
+            y=test_label,
+            batch_size=batch_size,
+            shuffle=False)
+        # Use the Estimator 'evaluate' method
+        e = model.evaluate(input_fn)
+        print("Testing Accuracy:", e['accuracy'])
