@@ -3,8 +3,8 @@ import numpy as np
 tf.logging.set_verbosity(tf.logging.INFO)
 
 if __name__ == "__main__":
-    IRIS_TRAINING = "iris_training.csv"
-    IRIS_TEST = "iris_test.csv"
+    IRIS_TRAINING = "iris_data/iris_training.csv"
+    IRIS_TEST = "iris_data/iris_test.csv"
 
     # Load datasets.
     training_set = tf.contrib.learn.datasets.base.load_csv_with_header(
@@ -19,9 +19,9 @@ if __name__ == "__main__":
     # Specify that all features have real-value data, number of feature is 4
     feature_columns = [tf.feature_column.numeric_column("x", shape=[4])]
 
-    # Build 3 layer DNN with 10, 20, 10 units respectively.
+    # Build 4 layer DNN with 20, 40, 40, 20 units respectively.
     classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns,
-                                            hidden_units=[10, 20, 10],
+                                            hidden_units=[20, 40, 40, 20],
                                             n_classes=3,
                                             dropout=0.5,
                                             activation_fn=tf.nn.relu,
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         shuffle=True)
 
     # Train model, training 2000 steps.
-    classifier.train(input_fn=train_input_fn, steps=1000)
+    classifier.train(input_fn=train_input_fn, steps=40000)
 
     # Define the test inputs
     test_input_fn = tf.estimator.inputs.numpy_input_fn(
@@ -59,6 +59,6 @@ if __name__ == "__main__":
         shuffle=False)
 
     predictions = list(classifier.predict(input_fn=predict_input_fn))
-    predicted_classes = [p['class_ids'][0] for p in predictions]
+    for p in predictions:
+        print(p)
 
-    print("New Samples, Class Predictions: ", predicted_classes)
