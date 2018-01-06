@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 tf.logging.set_verbosity(tf.logging.INFO)
 
+step = 4000
+
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
@@ -117,12 +119,12 @@ if __name__ == "__main__":
         test_writer = tf.summary.FileWriter('tmp/cnn2/test')
 
         sess.run(tf.global_variables_initializer())
-        for i in range(5000):
+        for i in range(step):
             #randomly choose 50 digits to train.
             batch_vec, batch_label = next_batch(train_vec, train_label, 50)
             if i % 100 == 0:
                 #train_accuracy = accuracy.eval(feed_dict={x: train_vec, y_: train_label, keep_prob: 1.0})
-                summary, acc = sess.run([merged, accuracy], feed_dict={x: test_vec, y_: test_label, keep_prob: 1.0})
+                summary, acc = sess.run([merged, accuracy], feed_dict={x: train_vec, y_: train_label, keep_prob: 1.0})
                 test_writer.add_summary(summary, i)
                 print('step %d, test accuracy %g' % (i, acc))
             #dropout rate is 0.5.

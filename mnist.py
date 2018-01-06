@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 
+step = 1000
+display_step = 50
 
 def generate_label(label):
     length = len(label)
@@ -27,14 +29,25 @@ if __name__ == "__main__":
     y_ = tf.placeholder(tf.float32, shape=[None, 10])
     W = tf.Variable(tf.zeros([784, 10]))
     b = tf.Variable(tf.zeros([10]))
-    sess.run(tf.global_variables_initializer())
     y = tf.matmul(x, W) + b
+    tf.summary.histogram('y', y)
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    tf.summary.scalar('accuracy', accuracy)
 
-    for _ in range(1000):
-        train_step.run(feed_dict={x: train_vec, y_: train_label})
+    sess.run(tf.global_variables_initializer())
+    merged = tf.summary.merge_all()
+    writer = tf.summary.FileWriter('/tmp/mnist', sess.graph)
+    for i in range(step):
+        summary, _ = sess.run([merged, train_step], feed_dict={x: train_vec, y_: train_label})
+        writer.add_summary(summary, i)
+        if i % display_step == 0:
+            _, c = sess.run([train_step, accuracy], feed_dict={x: train_vec, y_: train_label})
+            print("current step: ", i, ", current training accuracy: ", c)
 
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     print(accuracy.eval(feed_dict={x: test_vec, y_: test_label}))
+    writer.close()
